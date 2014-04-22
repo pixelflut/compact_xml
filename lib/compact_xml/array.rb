@@ -6,7 +6,7 @@ class Array
   
   def to_compact_xml(options = {})
     options = options.dup
-    options[:root]     ||= all? { |e| e.is_a?(first.class) && first.class.to_s != "Hash" } ? ActiveSupport::Inflector.pluralize(ActiveSupport::Inflector.underscore(first.class.name)).tr('/', '_') : "records"
+    options[:root]     ||= all? { |e| e.is_a?(first.class) && first.class.to_s != "Hash" } ? ActiveSupport::Inflector.pluralize(ActiveSupport::Inflector.underscore(first.respond_to?(:compact_xml_root_attribute_name) ? first.compact_xml_root_attribute_name : first.class.name)).tr('/', '_') : "records"
     options[:root]  =  options[:root].to_s
     options[:children] ||= options[:root].to_s.singularize
     options[:indent]   ||= 2

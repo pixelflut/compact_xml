@@ -5,6 +5,10 @@ if defined? ActiveRecord
     module ActiveRecord
       module InstanceMethods
     
+        def compact_xml_root_attribute_name
+          self.class.compact_xml_root_attribute_name
+        end
+        
         def to_compact_xml(options = {}, &block)
           serializer = CompactXml::CompactXmlSerializer.new(self, options.merge(compact_xml_map_attributes: self.class.compact_xml_map_attributes)).serialize(&block)
         end
@@ -14,7 +18,15 @@ if defined? ActiveRecord
     
     module ActiveRecord
       module ClassMethods
-      
+        
+        def compact_xml_root_attribute_name
+          @compact_xml_root_attribute || self.model_name.element
+        end
+
+        def compact_xml_root_attribute(root_attribute_name)
+          @compact_xml_root_attribute = root_attribute_name
+        end
+              
         def compact_xml_map_attribute(old_attribute, new_attribute_name)
           compact_xml_map_attributes[old_attribute.to_sym] = new_attribute_name.to_s
         end
@@ -89,7 +101,7 @@ if defined? ActiveRecord
         options[:indent]  ||= 2
         options[:builder] ||= ::PxBuilder::XmlMarkup.new(indent: options[:indent], camelcase: options[:camelcase])
         
-        root = (options[:root] || @serializable.class.model_name.element).to_s
+        root = (options[:root] || @serializable.compact_xml_root_attribute_name).to_s
 
         root = ActiveSupport::XmlMini.rename_key(root, options)
         
