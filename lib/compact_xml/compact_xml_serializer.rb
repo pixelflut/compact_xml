@@ -3,21 +3,36 @@ if defined? ActiveRecord
 
   module CompactXml
     module ActiveRecord
+      module InstanceMethods
     
-      def to_compact_xml(options = {}, &block)
-        serializer = CompactXml::CompactXmlSerializer.new(self, options).serialize(&block)        
+        def to_compact_xml(options = {}, &block)
+          serializer = CompactXml::CompactXmlSerializer.new(self, options.merge(compact_xml_map_attributes: self.class.compact_xml_map_attributes)).serialize(&block)
+        end
+      
       end
+    end
     
+    module ActiveRecord
+      module ClassMethods
+      
+        def compact_xml_map_attribute(old_attribute, new_attribute_name)
+          compact_xml_map_attributes[old_attribute.to_sym] = new_attribute_name.to_s
+        end
+        
+        def compact_xml_map_attributes
+          @compact_xml_map_attributes ||= {}
+        end
+      
+      end
     end
 
     class CompactXmlSerializer < ::ActiveModel::Serializers::Xml::Serializer
-    
     
       def add_attributes(args)
         options[:subobjects] ||= []
 
         serializable_collection.collect do |attribute|
-          key = ActiveSupport::XmlMini.rename_key(attribute.name, options)
+          key = ActiveSupport::XmlMini.rename_key(options[:compact_xml_map_attributes][attribute.name.to_sym] || attribute.name, options)
 
           if attribute.value != "null"
             if attribute.value.respond_to?(:to_model) && attribute.value.to_model.respond_to?(:to_compact_xml)
@@ -43,7 +58,7 @@ if defined? ActiveRecord
     
       def add_associations(association, records, opts)
         if records.is_a?(Enumerable)
-          tag = ActiveSupport::XmlMini.rename_key(association.to_s, opts)
+          tag = ActiveSupport::XmlMini.rename_key(options[:compact_xml_map_attributes][association.to_sym] || association.to_s, opts)
           type = options[:skip_types] ? {} : {type: "array"}
 
           if records.empty?
@@ -59,14 +74,12 @@ if defined? ActiveRecord
                   record_type = {type: record_class}
                 end
                 
-
                 record.to_compact_xml opts.merge(root: association_name, skip_instruct: true).merge(record_type)
               end
             end
           end
         else
           if record = @serializable.send(association)
-
             record.to_compact_xml(opts.merge(root: association_name, skip_instruct: true))
           end
         end
@@ -96,7 +109,7 @@ if defined? ActiveRecord
         @builder.tag!(*args) do
           if subobjects = options.delete(:subobjects)
             subobjects.each do |attribute|
-              key = ActiveSupport::XmlMini.rename_key(attribute.name, options)
+              key = ActiveSupport::XmlMini.rename_key(options[:compact_xml_map_attributes][attribute.name.to_sym] || attribute.name, options)
               if attribute.value != "null"
                 if attribute.value.respond_to?(:to_model) && attribute.value.to_model.respond_to?(:to_compact_xml)
                   attribute.value.to_model.to_compact_xml(options.merge({root: key, skip_instruct: true}))
@@ -127,5 +140,6 @@ if defined? ActiveRecord
       
   end
 
-  ActiveRecord::Base.send(:include, CompactXml::ActiveRecord)
+  ActiveRecord::Base.send(:include, CompactXml::ActiveRecord::InstanceMethods)
+  ActiveRecord::Base.send(:extend, CompactXml::ActiveRecord::ClassMethods)
 end
