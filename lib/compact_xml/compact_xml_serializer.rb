@@ -29,7 +29,7 @@ if defined? ActiveRecord
               when Hash
                 options[:subobjects] << attribute
               when Time
-                value = attribute.value.xmlschema
+                value = attribute.value.to_i
               when NilClass
                 value = nil
               else
