@@ -15,7 +15,7 @@ module CompactXml
     end
     
     def recursive_compact_xml_markup(object, root_tag = nil)
-      options = self.class.compact_xml_config
+      options = object.class.compact_xml_config
       
       root_tag ||= options[:root]
       
@@ -49,7 +49,7 @@ module CompactXml
         end]
       elsif options[:map_attributes].try(:is_a?, Symbol) and respond_to?(options[:map_attributes])
         attributes = Hash[attributes.map do |key, value|
-          self.send(options[:map_attributes], key, value).to_a.flatten
+          object.send(options[:map_attributes], key, value).to_a.flatten
         end]
       end
 
@@ -111,7 +111,7 @@ module CompactXml
     module ClassMethods
       
       def compact_xml_config(options = nil)
-        if options
+        if options and options.try(:any?)
           @compact_xml_config = {}
           if self.respond_to?(:compact_xml_default_config)
             @compact_xml_config = compact_xml_default_config || {}
