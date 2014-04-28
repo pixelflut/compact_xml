@@ -80,12 +80,12 @@ module CompactXml
       end
       
       inline_and_block_attributes[:inline].each do |key, value|
-        key = ERB::Util.html_escape(key.to_s.camelize(:lower))
-        value = ERB::Util.html_escape(value)
-        
         if value.is_a?(Time)
           value = value.to_i
         end
+        
+        key = ERB::Util.html_escape(key.to_s.camelize(:lower))
+        value = ERB::Util.html_escape(value)
         
         markup_string << %Q( #{key}="#{value}")
       end
