@@ -31,7 +31,7 @@ module CompactXml
       elsif object.is_a?(Array)
         root_tag ||= object.first.class.name.to_s.camelize(:lower).pluralize
         attributes = object.map do |value|
-          ["#{value.class.name}-#{value.object_id}".camelize(:lower), value]
+          ["#{value.class.name}-#{value.object_id}", value]
         end
       elsif object.is_a?(Hash)
         attributes = object
@@ -78,12 +78,13 @@ module CompactXml
       end
       
       inline_and_block_attributes[:inline].each do |key, value|
-        key = ERB::Util.html_escape(key)
+        key = ERB::Util.html_escape(key).camelize(:lower)
         value = ERB::Util.html_escape(value)
         markup_string << %Q( #{key}="#{value}")
       end
       
       inline_and_block_attributes[:block].each do |key, value|
+        key = key.camelize(:lower)
         if inline_element
           markup_string << '>'
           inline_element = false
