@@ -70,10 +70,12 @@ module CompactXml
       inline_and_block_attributes[:block] = {}
       
       attributes.select do |key, value|
-        if value.class.compact_xml_config[:block]
-          inline_and_block_attributes[:block][key] = value
-        else
-          inline_and_block_attributes[:inline][key] = value
+        unless value.blank?
+          if value.class.compact_xml_config[:block]
+            inline_and_block_attributes[:block][key] = value
+          else
+            inline_and_block_attributes[:inline][key] = value
+          end
         end
       end
       
