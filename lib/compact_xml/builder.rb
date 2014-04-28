@@ -102,8 +102,10 @@ module CompactXml
         end
         
         if value.is_a?(Array)
-          markup_string << %Q(<#{key} type="array">)
-          markup_string << recursive_compact_xml_markup(value)
+          markup_string << %Q(<#{key.pluralize} type="array">)
+          value.each do |v|
+            markup_string << recursive_compact_xml_markup(v, key.singularize)
+          end
           markup_string << %Q(</#{key}>)
         else
           markup_string << recursive_compact_xml_markup(value)
