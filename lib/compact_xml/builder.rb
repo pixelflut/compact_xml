@@ -78,13 +78,13 @@ module CompactXml
       end
       
       inline_and_block_attributes[:inline].each do |key, value|
-        key = ERB::Util.html_escape(key).camelize(:lower)
+        key = ERB::Util.html_escape(key.to_s.camelize(:lower))
         value = ERB::Util.html_escape(value)
         markup_string << %Q( #{key}="#{value}")
       end
       
       inline_and_block_attributes[:block].each do |key, value|
-        key = key.camelize(:lower)
+        key = key.to_s.camelize(:lower)
         if inline_element
           markup_string << '>'
           inline_element = false
