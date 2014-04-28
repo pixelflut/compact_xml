@@ -1,8 +1,8 @@
-if defined? ActiveRecord
-  require 'active_record/serializers/xml_serializer'
+if defined? ActiveModel
+  require 'active_model/serializers/xml'
 
   module CompactXml
-    module ActiveRecord
+    module ActiveModel
       module InstanceMethods
     
         def compact_xml_root_attribute_name
@@ -10,13 +10,19 @@ if defined? ActiveRecord
         end
         
         def to_compact_xml(options = {}, &block)
-          serializer = CompactXml::CompactXmlSerializer.new(self, options.merge(compact_xml_map_attributes: self.class.compact_xml_map_attributes)).serialize(&block)
+          options[:compact_xml_map_attributes] ||= {}
+          options[:compact_xml_map_attributes].deep_merge!(self.class.compact_xml_map_attributes)
+          
+          options[:except] ||= []
+          options[:except] += self.class.compact_xml_get_except_attributes
+          
+          serializer = CompactXml::CompactXmlSerializer.new(self, options).serialize(&block)
         end
       
       end
     end
     
-    module ActiveRecord
+    module ActiveModel
       module ClassMethods
         
         def compact_xml_root_attribute_name
@@ -34,6 +40,14 @@ if defined? ActiveRecord
         def compact_xml_map_attributes
           @compact_xml_map_attributes ||= {}
         end
+        
+        def compact_xml_except_attributes(*args)
+          @compact_xml_except_attributes = args.to_a.flatten
+        end
+        
+        def compact_xml_get_except_attributes(*args)
+          @compact_xml_except_attributes ||= []
+        end
       
       end
     end
@@ -44,7 +58,7 @@ if defined? ActiveRecord
         options[:subobjects] ||= []
 
         serializable_collection.collect do |attribute|
-          key = ActiveSupport::XmlMini.rename_key(options[:compact_xml_map_attributes][attribute.name.to_sym] || attribute.name, options)
+          key = ActiveSupport::XmlMini.rename_key(options[:compact_xml_map_attributes][attribute.name.to_sym] || attribute.name, options).camelize(:lower)
 
           if attribute.value != "null"
             if attribute.value.respond_to?(:to_model) && attribute.value.to_model.respond_to?(:to_compact_xml)
@@ -62,7 +76,7 @@ if defined? ActiveRecord
               else
                 value = attribute.value.to_s
               end
-              args << {key => value} unless value.nil? and options[:ignore_nil]
+              args << {key => value} unless value.nil? and !options[:skip_ignore_nil]
             end
           end
         end
@@ -70,7 +84,7 @@ if defined? ActiveRecord
     
       def add_associations(association, records, opts)
         if records.is_a?(Enumerable)
-          tag = ActiveSupport::XmlMini.rename_key(options[:compact_xml_map_attributes][association.to_sym] || association.to_s, opts)
+          tag = ActiveSupport::XmlMini.rename_key(options[:compact_xml_map_attributes][association.to_sym] || association.to_s, opts).camelize(:lower)
           type = options[:skip_types] ? {} : {type: "array"}
 
           if records.empty?
@@ -98,6 +112,7 @@ if defined? ActiveRecord
       end
     
       def serialize
+        options[:camelcase] = options.has_key?(:camelcase) ? options[:camelcase] : true
         options[:indent]  ||= 2
         options[:builder] ||= ::PxBuilder::XmlMarkup.new(indent: options[:indent], camelcase: options[:camelcase])
         
@@ -113,7 +128,7 @@ if defined? ActiveRecord
         if options[:type]
           args << {type: options[:type]}
         end
-
+        
         add_attributes(args)
 
         @builder = options[:builder]
@@ -136,7 +151,7 @@ if defined? ActiveRecord
               end
             end
           end
-          
+        
           procs = options.delete(:procs)
           @serializable.send(:serializable_add_includes, options) { |association, records, opts|
             add_associations(association, records, opts)
@@ -152,6 +167,12 @@ if defined? ActiveRecord
       
   end
 
-  ActiveRecord::Base.send(:include, CompactXml::ActiveRecord::InstanceMethods)
-  ActiveRecord::Base.send(:extend, CompactXml::ActiveRecord::ClassMethods)
+  ActiveModel::Base.send(:include, CompactXml::ActiveModel::InstanceMethods)
+  ActiveModel::Base.send(:extend, CompactXml::ActiveModel::ClassMethods)
+  
+  if defined? ActiveRecord
+    ActiveRecord::Base.send(:include, CompactXml::ActiveModel::InstanceMethods)
+    ActiveRecord::Base.send(:extend, CompactXml::ActiveModel::ClassMethods)
+  end
+  
 end
