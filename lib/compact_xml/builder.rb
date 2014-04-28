@@ -43,14 +43,18 @@ module CompactXml
         attributes.slice!(*options[:attributes])
       end
       
-      if options[:map_attributes].try(:is_a?, Proc)
-        attributes = Hash[attributes.map do |key, value|
-          options[:map_attributes].call(key, value).to_a.flatten
-        end]
-      elsif options[:map_attributes].try(:is_a?, Symbol) and respond_to?(options[:map_attributes])
-        attributes = Hash[attributes.map do |key, value|
-          object.send(options[:map_attributes], key, value).to_a.flatten
-        end]
+      if options[:map_attributes]
+        [options[:map_attributes]].flatten.each do |proc_or_method|
+          if proc_or_method.is_a?(Proc)
+            attributes = Hash[attributes.map do |key, value|
+              proc_or_method.call(key, value).to_a.flatten
+            end]
+          elsif proc_or_method.is_a?(Symbol) and respond_to?(proc_or_method)
+            attributes = Hash[attributes.map do |key, value|
+              object.send(proc_or_method, key, value).to_a.flatten
+            end]
+          end
+        end
       end
 
       root_tag ||= object.class.name.camelize(:lower)
