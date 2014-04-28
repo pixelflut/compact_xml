@@ -49,7 +49,7 @@ module CompactXml
             attributes = Hash[attributes.map do |key, value|
               proc_or_method.call(key, value).to_a.flatten
             end]
-          elsif proc_or_method.is_a?(Symbol) and respond_to?(proc_or_method)
+          elsif proc_or_method.is_a?(Symbol) and object.respond_to?(proc_or_method)
             attributes = Hash[attributes.map do |key, value|
               object.send(proc_or_method, key, value).to_a.flatten
             end]
