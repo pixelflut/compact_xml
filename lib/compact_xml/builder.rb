@@ -31,7 +31,7 @@ module CompactXml
       elsif object.is_a?(Array)
         root_tag ||= object.first.class.name.to_s.camelize(:lower).pluralize
         attributes = object.map do |value|
-          [value.to_s.to_sym, value]
+          ["#{value.class.name}-#{value.object_id}".camelize(:lower), value]
         end
       elsif object.is_a?(Hash)
         attributes = object
@@ -117,7 +117,11 @@ module CompactXml
           end
           @compact_xml_config.deep_merge!(options)
         else
-          @compact_xml_config || {}
+          if self.respond_to?(:compact_xml_default_config)
+            @compact_xml_config || compact_xml_default_config || {}
+          else
+            @compact_xml_config || {}
+          end
         end
       end
       
@@ -137,7 +141,6 @@ Hash.send(:define_singleton_method, :compact_xml_default_config) do
 end
 
 if ActiveModel
-  ActiveModel::Base.send(:include, CompactXml::Builder)
   ActiveModel::Base.send(:define_singleton_method, :compact_xml_default_config) do
     {block: true}
   end
