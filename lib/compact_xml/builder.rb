@@ -98,6 +98,10 @@ module CompactXml
       end
       
       inline_and_block_attributes[:inline].each do |key, value|
+        if key.to_s == 'id'
+          key = 'identifier'
+        end
+        
         if value.is_a?(Time)
           value = value.to_i
         end
@@ -110,8 +114,8 @@ module CompactXml
           value = 0
         end
         
-        key = key.gsub(/_id$/, '_iD')
-        key = ERB::Util.html_escape(key.to_s.camelize(:lower))
+        key = key.to_s.gsub(/_id$/, '_iD')
+        key = ERB::Util.html_escape(key.camelize(:lower))
         value = ERB::Util.html_escape(value)
         
         markup_string << %Q( #{key}="#{value}")
