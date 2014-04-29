@@ -110,6 +110,7 @@ module CompactXml
           value = 0
         end
         
+        key = key.gsub(/_id$/, '_iD')
         key = ERB::Util.html_escape(key.to_s.camelize(:lower))
         value = ERB::Util.html_escape(value)
         
