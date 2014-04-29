@@ -39,8 +39,22 @@ module CompactXml
         attributes = {value: object.to_s}
       end
       
-      if options[:attributes].try(:any?)
-        attributes.slice!(*options[:attributes])
+      if options[:attributes]
+        options[:attributes] = [options[:attributes]].flatten
+        options[:attributes].map!(&:to_sym)
+        attributes.symbolize_keys!
+        
+        options[:attributes].each do |attribute_or_accessor|
+          attribute_or_accessor = attribute_or_accessor.to_sym
+          
+          unless attributes.has_key?(attribute_or_accessor)
+            attributes[attribute_or_accessor] = object.send(attribute_or_accessor)
+          end
+        end
+        
+        if options[:attributes].any?
+          attributes.slice!(*options[:attributes])
+        end
       end
       
       if options[:map_attributes]
@@ -74,7 +88,7 @@ module CompactXml
       inline_and_block_attributes[:block] = {}
       
       attributes.select do |key, value|
-        unless value.blank?
+        if not value.blank? or value.is_a?(FalseClass)
           if value.class.compact_xml_config[:block]
             inline_and_block_attributes[:block][key] = value
           else
@@ -86,6 +100,14 @@ module CompactXml
       inline_and_block_attributes[:inline].each do |key, value|
         if value.is_a?(Time)
           value = value.to_i
+        end
+        
+        if value.is_a?(TrueClass)
+          value = 1
+        end
+        
+        if value.is_a?(FalseClass)
+          value = 0
         end
         
         key = ERB::Util.html_escape(key.to_s.camelize(:lower))
