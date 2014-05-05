@@ -29,6 +29,7 @@ module CompactXml
       elsif object.class.ancestors.include?(ActiveModel::Base)
         attributes = object.attributes
       elsif object.is_a?(Array)
+        root_tag ||= object.first.class.compact_xml_config[:root].to_s.camelize(:lower).pluralize
         root_tag ||= object.first.class.name.to_s.camelize(:lower).pluralize
         attributes = object.map do |value|
           ["#{value.class.name}-#{value.object_id}", value]
