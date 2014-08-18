@@ -18,7 +18,6 @@ module CompactXml
       options = object.class.compact_xml_config
       
       root_tag ||= options[:root]
-      root_tag = root_tag.to_s.camelize
       
       if object.is_a?(ActiveRecord::Relation)
         object = object.to_a
@@ -75,8 +74,8 @@ module CompactXml
         end
       end
 
-      root_tag ||= object.class.name.camelize(:lower)
-      root_tag = ERB::Util.html_escape(root_tag)
+      root_tag ||= object.class.name
+      root_tag = ERB::Util.html_escape(root_tag.to_s.camelize(:lower))
       
       inline_element = true
       
