@@ -7,10 +7,10 @@ module CompactXml
       base.extend(ClassMethods)
     end
     
-    def to_compact_xml
+    def to_compact_xml(root_tag = nil)
       cxml_string = ''
       cxml_string << CompactXmlVersionHead1
-      cxml_string << recursive_compact_xml_markup(self)
+      cxml_string << recursive_compact_xml_markup(self, root_tag)
       cxml_string
     end
     
@@ -18,6 +18,7 @@ module CompactXml
       options = object.class.compact_xml_config
       
       root_tag ||= options[:root]
+      root_tag = root_tag.to_s.camelize
       
       if object.is_a?(ActiveRecord::Relation)
         object = object.to_a

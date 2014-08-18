@@ -14,7 +14,7 @@ module CompactXml
           self.content_type ||= Mime::CXML
           
           if data.respond_to?(:to_compact_xml)
-            data.to_compact_xml
+            data.to_compact_xml(options[:root])
           else
             data
           end
